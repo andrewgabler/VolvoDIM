@@ -34,7 +34,7 @@ void setup()
   sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments);
   sevseg.setBrightness(100);
   /* Delete the code above if not using 2 seven segment displays*/
-  //SERIAL.begin(115200);
+  //SERIAL.begin(115200); //Enable and disable serial logging 
   pinMode(buttonPin, INPUT); //button
   pinMode(pullPin, INPUT_PULLUP); //button
   /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
@@ -101,6 +101,7 @@ void loop()
     sevseg.refreshDisplay(); //display
     File logFile = SD.open("drive1.txt");
     //File logFile = SD.open("3A04004.txt");
+    if(logFile.seek(lineCnt)){
       String line = logFile.readStringUntil('\n');
       lineCnt = lineCnt + 1 + line.length();
       startLoc = line.indexOf(",");
@@ -126,6 +127,7 @@ void loop()
       //delay(tDelay-(tEnd-tStart)); //causing glitches, works with or without... 
       //timing will change with code improvemnts 
       CAN.sendMsgBuf(address, 1, 8, stmp);
+    }
   }
 }
 
