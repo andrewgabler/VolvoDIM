@@ -85,7 +85,7 @@ void loop()
     bRun = true;
   }
   /* ^Delete if not using button^ */
-  while (bRun)
+  while (true)
   {
     /* This is my first *real* project using C++ where I didn't have a guide to follow.
     Code is using easy but slow solutions for splitting lines and storing/converting strings.
@@ -100,7 +100,7 @@ void loop()
     sevseg.setNumber(00); //display
     sevseg.refreshDisplay(); //display
     File logFile = SD.open("drive1.txt");
-    //File logFile = SD.open("3A04004.txt");
+    //File logFile = SD.open("A10408.txt");
     if(logFile.seek(lineCnt)){
       String line = logFile.readStringUntil('\n');
       lineCnt = lineCnt + 1 + line.length();

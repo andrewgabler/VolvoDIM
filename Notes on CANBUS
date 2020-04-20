@@ -1,0 +1,258 @@
+Notes on CANBUS
+
+http://www.svxc.se/phpBB2/viewtopic.php?f=9&t=23011&sid=2ef00c990483c0de387f9f4a5ab7b864
+Page 4 has details on sending text to the dim, needs translation... plays nice with google translation of entire site.
+
+
+Another great source, needs translation by copy and paste as well.
+https://193.40.25.6/xmlui/bitstream/handle/10492/4355/Steven_Visla_2018BA_EK_t%C3%A4istekst.pdf?sequence=1&isAllowed=y
+
+Good info in comments, needs copy and paste translation because they block sites like google from opening their site.
+https://www.motor-talk.de/forum/der-can-bus-im-volvo-t4420570.html?
+
+
+//Sweep Gauges 
+send (can_id = 0x000FFFFE, [0xCB, 0x51, 0xB2, 0x02, 0x00, 0x00, 0x00, 0x00], wait = 10) #test all instruments
+send (can_id = 0x000FFFFE, [0xCE, 0x51, 0xB0, 0x09, 0x01, 0xFF, 0x04, 0x00], wait = 10) #ABS lamp ON
+send (can_id = 0x000FFFFE, [0xCE, 0x51, 0xB0, 0x09, 0x01, 0xFF, 0x08, 0x00], wait = 10) #SPIN lamp ON
+
+*For Diagnostics mode in your car only!*
+Noticed today that you need to send this around every 5 seconds, felt like a good time, to keep the activation going.
+0x0FFFFE, 0xD8, 0x00, 0x00, 0x00.0x00, 0x00, 0x00, 0x00
+
+Heres some other info (MY04) from CEM to DIM (milage, warning lights, etc.)
+#define CEM_DIM 0x02A07428 // CEM to DIM
+
+I also went after the dimming message. During the measurement, my car was parked in a quite dark underground garage. The message ID seemed to be 0x2605020 .
+
+Dimmer poti at maximum (ie brightest):
+0 0 1 85 F3 0 0 0
+
+Dimmer poti at minimum (ie darkest):
+0 0 1 5 3 0 0 0 
+
+
+You must transmit ABS / BCM packets from CEM to get the DIM working. Thats hard when you have a CEM connected at the same time.
+
+I sent everything on the bus from the car to my lone DIM and that got it working correctly.
+
+You probably need to fool CEM on HS CAN and send the ABS / BCM boxes commands from a running car.
+Up
+
+
+
+2969/5000
+Display text on the DIM display:
+
+This is only a brief description, which only explains the basis of the text representation.
+
+Many important functions, such as updating individual lines or muting the radio, are not yet included.
+
+The phone has two IDs under which it sends different information. In one ID the text content is sent to the display, the other contains control commands. These can silence the radio, switch the display on or off or notify the vehicle that a telephone is currently installed in the vehicle.
+
+ 
+
+Here is an example from a 2001 telephone:
+
+ID: 00C0200E Record: C0 00 00 00 00 00 00 05
+
+This is the ID which is used for the control, this activates the display.
+
+ 
+
+ID: 00400008 Data record: A7 00 48 65 6C 6C 6F 20
+
+This ID contains the text
+
+It is the first data record that is sent to the display
+
+A7 00 always marks the beginning of the message, the text begins with the 48 in HEX
+
+48 H 65 e 6C l 6C l 6F o 20 spaces
+
+ID: 00400008 Record: 21 57 6F 72 6C 64 20 20
+
+21 stands for the second message which is directed to the display, the counter is continuous
+
+22 23 ...
+
+At 57 the text continues: 57 W 6F o 72 r 6C l 64 d
+
+ID: 00400008 Record: 22 20 20 20 56 65 72 73
+
+ID: 00400008 Record: 67 69 6F 6E 20 30 2E 31
+
+The 6 marks the last message in this row, the 7 stands for the number of characters that are still contained in this message. In this case, the message is completely filled, the last value is about 00 at the beginning only a 66. The message is only displayed when this message is received.
+
+The time interval between the messages should always be around 30ms, otherwise there is a timeout or if the message is sent too quickly, the message cannot be processed.
+
+In CanHacker this would look like this:
+
+Code:
+Time ID DLC Data Comment
+00,090 00C0200E 8 C0 00 00 00 00 00 00 05
+00.120 00400008 8 A7 00 48 65 6C 6C 6F 20
+00,150 00400008 8 21 57 6f 72 6c 64 20 20
+00.180 00400008 8 22 20 20 20 56 65 72 73
+00,210 00400008 8 67 69 6F 6E 20 30 2E 31
+
+It is important with CanHacker that there is always a space after the last character in the file, otherwise the last message is often not played (the black bar stops beforehand).
+
+Now "Hello World"
+
+"Verson 0.1"
+
+appear on the display.
+
+The display can be deleted with:
+
+ID: 00400008 Record: E1 FE 00 00 00 00 00 00
+
+The display can be switched off again with:
+
+ID: 00C0200E Record: 00 00 00 00 00 00 00 04
+
+ 
+
+The 2002 model should behave similarly: (Unfortunately untested)
+
+ID: 0220200E Tax reports
+
+ID: 00C00008 Text content
+
+Code:
+Time ID DLC Data Comment
+00,090 0220200E 8 C0 00 00 00 00 00 00 05
+00.120 00C00008 8 A7 00 48 65 6C 6C 6F 20
+00,150 00C00008 8 21 57 6f 72 6c 64 20 20
+00.180 00C00008 8 22 20 20 20 56 65 72 73
+00,210 00C00008 8 67 69 6F 6E 20 30 2E 31
+
+
+
+
+1671/5000
+Hello,
+
+don't worry, I feel the same way.
+
+But today was good weather and I had time :)
+
+my achievement
+
+_________________________________________________________________________________
+
+indicator
+
+00A10408 8 00 00 00 00 00 00 00 08
+
+Change only in the last place
+
+08 Off
+
+0A left turn signal
+
+0C right turn signal
+
+0E hazard lights
+
+_________________________________________________________________________________
+
+Turn signal switch
+
+0131726C 8 00 8C 35 D2 60 00 00 3F
+
+Changes
+
+The positions 1 "00 change in 80" and the position 3 "35 change in 37,32,39,3B and 3C ..." could not be identified
+
+The digit 6 "00" wheel, turn counterclockwise
+
+00 off
+
+03 Direct start of auxiliary heating
+
+05 Parking heater timer 2
+
+07 Parking heater timer 1
+
+09 average speed
+
+0B Current consumption
+
+0D average consumption
+
+0F tank
+
+The position 6 "00" wheel, rotation with the clock hand
+
+3E tank
+
+3C
+
+3A
+
+38
+
+36
+
+34
+
+32
+
+30 off
+
+Digit 8 "3F"
+
+3F off
+
+7F Read button
+
+BF reset button
+
+_________________________________________________________________________________
+
+Window lifter switch driver door
+
+014034A2 8 00 5B 80 05 89 23 04 00
+
+Changes
+
+Place 3 "80" childproof windows in the rear
+
+80 to
+
+00 off
+
+Place 4 "05" windows in the rear
+
+05 no actuation
+
+15 windows LH high
+
+25 window LH down
+
+45 windows RH high
+
+85 RH window down
+
+55 Blocking before double occupancy
+
+Digit 5 ​​"89" combination function of the mirror
+
+Folding mirror in and out, button in CCM
+
+89 rest position
+
+D9 Fold up the mirror
+
+E9 Unfold mirror
+
+Passenger mirror adjustment, power window switch driver's door
+
+89 rest position
+
+B9 mirror glass high
+
+C9 mirror glass down
+
