@@ -1,10 +1,8 @@
-// demo: CAN-BUS Shield, send data
-// loovee@seeed.cc
 #include <mcp_can.h>
 #include <SPI.h>
 #include <SD.h>
-#include "SevSeg.h"
-SevSeg sevseg;
+#include "SevSeg.h" //optional for seven segment display
+SevSeg sevseg; //optional for seven segment display
 
 /*SAMD core*/
 #ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
@@ -19,14 +17,15 @@ const int SPI_CS_PIN = 9;
 const int SPI_CS_SD = 4;
 unsigned char flagRecv = 0;
 unsigned long lineCnt = 0;
-const int buttonPin = A0;
-const int pullPin = A1;
-int buttonState = 0;
+const int buttonPin = A0; //optional button to start playback
+const int pullPin = A1; //optional button to start playback
+int buttonState = 0; //optional button to start playback
 bool bRun = false;
 MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
 
 void setup()
 {
+  /* option seven segment number for info without a computer attached  */
   byte numDigits = 2;
   byte digitPins[] = {11, 10};
   byte segmentPins[] = {5, A3, A5, A2, 6, 7, A4};
@@ -34,29 +33,31 @@ void setup()
   byte hardwareConfig = COMMON_ANODE;
   sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments);
   sevseg.setBrightness(100);
+  /* Delete the code above if not using 2 seven segment displays*/
   //SERIAL.begin(115200);
-  pinMode(buttonPin, INPUT);
-  pinMode(pullPin, INPUT_PULLUP);
-  while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 500k
+  pinMode(buttonPin, INPUT); //button
+  pinMode(pullPin, INPUT_PULLUP); //button
+  /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
+  while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 125k
   {
     //SERIAL.println("CAN BUS Shield init fail");
     //SERIAL.println(" Init CAN BUS Shield again");
-    sevseg.setNumber(99);
-    sevseg.refreshDisplay();
+    sevseg.setNumber(99);//display
+    sevseg.refreshDisplay();//display
   }
   //SERIAL.println("CAN BUS Shield init ok!");
   attachInterrupt(0, MCP2515_ISR, FALLING); // start interrupt
   if (!SD.begin(4))
   {
     //Serial.println("SD initialization failed!");
-    sevseg.setNumber(99);
-    sevseg.refreshDisplay();
+    sevseg.setNumber(99); //display
+    sevseg.refreshDisplay(); //display
     while (1)
       ;
   }
   //Serial.println("SD initialization done.");
-  sevseg.setNumber(11);
-  sevseg.refreshDisplay();
+  sevseg.setNumber(11);//display
+  sevseg.refreshDisplay();//display
   delay(200);
 }
 void MCP2515_ISR()
@@ -76,21 +77,30 @@ unsigned long tStart = 0;
 unsigned long tEnd = 0;
 void loop()
 {
+  /* Delete if not using button */
   buttonState = digitalRead(buttonPin);
   if (buttonState == LOW)
   {
     //Serial.println("Start pressed!");
     bRun = true;
   }
+  /* ^Delete if not using button^ */
   while (bRun)
   {
+    /* This is my first *real* project using C++ where I didn't have a guide to follow.
+    Code is using easy but slow solutions for splitting lines and storing/converting strings.
+    Should be updated and improved to be more efficient but my knowledge is not there yet and it
+    is working well enough. 
+    Seems to take about 15ms to process and send a message which is 
+    how long the CAN network takes in between messages.*/ 
+
+    //Format of lines being read in 0xFFFFFF,[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],19
+    //Message Id, Data, Time since last sent message.
     tStart = millis();
-    sevseg.setNumber(00);
-    sevseg.refreshDisplay();
+    sevseg.setNumber(00); //display
+    sevseg.refreshDisplay(); //display
     File logFile = SD.open("drive1.txt");
     //File logFile = SD.open("3A04004.txt");
-    if (logFile.seek(lineCnt) && logFile)
-    {
       String line = logFile.readStringUntil('\n');
       lineCnt = lineCnt + 1 + line.length();
       startLoc = line.indexOf(",");
@@ -104,7 +114,7 @@ void loop()
         int nextLoc = dataLine.indexOf(",");
         String temp = dataLine.substring(0, nextLoc);
         dataLine = dataLine.substring(nextLoc + 1, dataLine.length());
-        sevseg.refreshDisplay();
+        sevseg.refreshDisplay();//display
         unsigned char val = strtoul(temp.c_str(), 0, 16);
         stmp[i] = val;
       }
@@ -113,16 +123,9 @@ void loop()
       logFile.flush();
       logFile.close();
       tEnd = millis();
-      delay(tDelay-(tEnd-tStart)); //causing glitches, works without it too...
+      //delay(tDelay-(tEnd-tStart)); //causing glitches, works with or without... 
+      //timing will change with code improvemnts 
       CAN.sendMsgBuf(address, 1, 8, stmp);
-    }
-    else 
-    {
-      logFile.flush();
-      logFile.close();
-      startLoc = 0;
-      tStart = 0;
-    } 
   }
 }
 
