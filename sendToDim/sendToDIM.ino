@@ -1,8 +1,6 @@
 #include <mcp_can.h>
 #include <SPI.h>
 #include <SD.h>
-#include "SevSeg.h" //optional for seven segment display
-SevSeg sevseg; //optional for seven segment display
 
 /*SAMD core*/
 #ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
@@ -17,47 +15,27 @@ const int SPI_CS_PIN = 9;
 const int SPI_CS_SD = 4;
 unsigned char flagRecv = 0;
 unsigned long lineCnt = 0;
-const int buttonPin = A0; //optional button to start playback
-const int pullPin = A1; //optional button to start playback
-int buttonState = 0; //optional button to start playback
 bool bRun = false;
 MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
 
 void setup()
 {
-  /* option seven segment number for info without a computer attached  */
-  byte numDigits = 2;
-  byte digitPins[] = {11, 10};
-  byte segmentPins[] = {5, A3, A5, A2, 6, 7, A4};
-  bool resistorsOnSegments = true;
-  byte hardwareConfig = COMMON_ANODE;
-  sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments);
-  sevseg.setBrightness(100);
-  /* Delete the code above if not using 2 seven segment displays*/
   //SERIAL.begin(115200); //Enable and disable serial logging 
-  pinMode(buttonPin, INPUT); //button
-  pinMode(pullPin, INPUT_PULLUP); //button
   /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
   while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 125k
   {
     //SERIAL.println("CAN BUS Shield init fail");
     //SERIAL.println(" Init CAN BUS Shield again");
-    sevseg.setNumber(99);//display
-    sevseg.refreshDisplay();//display
   }
   //SERIAL.println("CAN BUS Shield init ok!");
   attachInterrupt(0, MCP2515_ISR, FALLING); // start interrupt
   if (!SD.begin(4))
   {
     //Serial.println("SD initialization failed!");
-    sevseg.setNumber(99); //display
-    sevseg.refreshDisplay(); //display
     while (1)
       ;
   }
   //Serial.println("SD initialization done.");
-  sevseg.setNumber(11);//display
-  sevseg.refreshDisplay();//display
   delay(200);
 }
 void MCP2515_ISR()
@@ -77,14 +55,6 @@ unsigned long tStart = 0;
 unsigned long tEnd = 0;
 void loop()
 {
-  /* Delete if not using button */
-  buttonState = digitalRead(buttonPin);
-  if (buttonState == LOW)
-  {
-    //Serial.println("Start pressed!");
-    bRun = true;
-  }
-  /* ^Delete if not using button^ */
   while (true)
   {
     /* This is my first *real* project using C++ where I didn't have a guide to follow.
@@ -97,8 +67,6 @@ void loop()
     //Format of lines being read in 0xFFFFFF,[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],19
     //Message Id, Data, Time since last sent message.
     tStart = millis();
-    sevseg.setNumber(00); //display
-    sevseg.refreshDisplay(); //display
     File logFile = SD.open("drive1.txt");
     //File logFile = SD.open("A10408.txt");
     if(logFile.seek(lineCnt)){
@@ -115,7 +83,6 @@ void loop()
         int nextLoc = dataLine.indexOf(",");
         String temp = dataLine.substring(0, nextLoc);
         dataLine = dataLine.substring(nextLoc + 1, dataLine.length());
-        sevseg.refreshDisplay();//display
         unsigned char val = strtoul(temp.c_str(), 0, 16);
         stmp[i] = val;
       }
@@ -126,7 +93,20 @@ void loop()
       tEnd = millis();
       //delay(tDelay-(tEnd-tStart)); //causing glitches, works with or without... 
       //timing will change with code improvemnts 
-      CAN.sendMsgBuf(address, 1, 8, stmp);
+      if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||address == 0x381526C ||address == 0x1A0600A||address == 0x2006428){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 3600008){
+        stmp[0] = 0x0;
+        stmp[1] = 0x0;
+        stmp[2] = 0xB0;
+        stmp[3] = 0x60;
+        stmp[4] = 0x30;
+        stmp[5] = 0x0;
+        stmp[6] = 0x0;
+        stmp[7] =  0x0;
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
     }
   }
 }

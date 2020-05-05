@@ -1,6 +1,3 @@
-// demo: CAN-BUS Shield, send data
-// loovee@seeed.cc
-
 #include <mcp_can.h>
 #include <SPI.h>
 #include <math.h>
@@ -12,7 +9,10 @@
   #define SERIAL Serial
 #endif
 int cnt = 0;
-unsigned long addrLi[6] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA10408};
+int srsCnt = 0;
+unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+unsigned long address;
+unsigned long addrLi[8] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA10408,0x2006428,0x1A0600A};
 /*
  * addrLi[0] = Speed/KeepAlive
  * addrLi[1] = RPM/Backlights
@@ -20,15 +20,19 @@ unsigned long addrLi[6] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA1
  * addrLi[3] = Time/GasTank
  * addrLi[4] = Brakes Keep alive?
  * addrLi[5] = Blinker
+ * addrLi[6] = Anti-Skid
+ * addrLi[7] = Aibag Light
  */
  //Refer to Excel Sheets for info about data values.
-unsigned char defaultData[6][8] = {
-  {1,0x4B,0x0,0xD8,0xF0,88,0,0}, //Speed/KeepAlive , 0x217FFC
-  {255,0xE1,255,0xF0,255,0xCF,0x0,0x0}, //RPM/Backlights , 0x2803008
-  {0x81,0x81,33,150,13,220,0x0,0x0}, //Coolant/OutdoorTemp , 0x3C01428 //broken right now
-  {0,1,5,0xBC,5,0xA0,64,64}, //Time/GasTank , 0x381526C
-  {0x0,0x0,0xB0,60,30,0x0,0x0,0x0}, //Brakes Keep alive? , 0x3600008
-  {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0} //Blinker , 0xA10408
+unsigned char defaultData[8][8] = {
+  {0x01,0x4B,0x00,0xD8,0xF0,0x58,0x00,0x00}, //Speed/KeepAlive , 0x217FFC
+  {0xFF,0xE1,0xFF,0xF0,0xFF,0xCF,0x00,0x00}, //RPM/Backlights , 0x2803008
+  {0x81,0x81,0x51,0x89,0xD0,0xDC,0x00,0x00}, //Coolant/OutdoorTemp , 0x3C01428 //broken right now
+  {0x00,0x01,0x05,0xBC,0x05,0xA0,0x40,0x40}, //Time/GasTank , 0x381526C
+  {0x00,0x00,0xB0,0x60,0x30,0x00,0x00,0x00}, //Brake system Keep alive , 0x3600008
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, //Blinker , 0xA10408
+  {0x01,0xE3,0xE0,0x00,0x00,0x00,0x00,0x00}, //Anti-Skid , 0x2006428
+  {0x00,0x00,0x00,0x00,0x00,0xBE,0x49,0x00} //Aibag Light , 0x1A0600A
   };
 // the cs pin of the version after v1.1 is default to D9
 // v0.9b and v1.0 is default D10
@@ -73,11 +77,52 @@ int clockToDecimal(int hour, int minute, int AM){
   return ((hour*60) + minute)+720;
 }
 
+/*
+ * Initialization data from logs for SRS sytem
+ */
+void srsSetup(){
+    unsigned char temp[8] = {0xC0,0x0,0x0,0x0,0x0,0xBC,0xDB,0x80};
+    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    delay(20);
+    temp[0]=0x0;
+    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    delay(20);
+    temp[0]=0xC0;
+    temp[6] = 0xC9;
+    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    delay(20);
+    temp[0]=0x80;
+    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+}
+
+/*
+ * Generates a value for the SRS message.
+ * Couldn't detect a pattern from my logs on the meaning of the first byte.
+ * First byte is decided semi-randomly and is selected based on occureance in the logs.
+ */
+void genSRS(long address, char stmp[]){
+  int randomNum = random(0,794);
+  if(randomNum >=0 && randomNum < 180){
+    stmp[0]= 0x40;
+  }
+  if(randomNum >=180 && randomNum < 370){
+    stmp[0]= 0xC0;
+  }
+  if(randomNum >=370 && randomNum < 575){
+    stmp[0]= 0x0;
+  }
+  if(randomNum >=575 && randomNum < 794){
+    stmp[0]= 0x80;
+  }
+  CAN.sendMsgBuf(address, 1, 8, stmp);
+  delay(20);
+}
+
 
 void setup()
 {
     SERIAL.begin(115200);
-
+    randomSeed(analogRead(0));
     while (CAN_OK != CAN.begin(CAN_125KBPS))              // init can bus : baudrate = 500k
     {
         SERIAL.println("CAN BUS Shield init fail");
@@ -86,22 +131,26 @@ void setup()
     }
     SERIAL.println("CAN BUS Shield init ok!");
     updateTime(clockToDecimal(6,45,1));
+    srsSetup();
 }
 
 
 
-unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-unsigned long address;
+
 void loop()
 {
     address = addrLi[cnt];
     for(int i=0;i<8;i++){
       stmp[i] = defaultData[cnt][i];
     }
-    CAN.sendMsgBuf(address, 1, 8, stmp);
-    delay(15);  // send data per 15ms
+    if(address == 0x1A0600A){
+      genSRS(address,stmp);
+    } else {
+      CAN.sendMsgBuf(address, 1, 8, stmp);
+      delay(20);  // send data per 15ms
+    }
     cnt++;
-    if(cnt==5){
+    if(cnt==8){
       cnt=0;
     }
 }
