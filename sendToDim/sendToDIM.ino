@@ -66,6 +66,8 @@ void loop()
 
     //Format of lines being read in 0xFFFFFF,[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],19
     //Message Id, Data, Time since last sent message.
+     unsigned char tempBrake[8] = {0x00,0x00,0xB0,0x60,0x30,0x00,0x00,0x00};
+    CAN.sendMsgBuf(0x3600008, 1, 8, tempBrake);
     tStart = millis();
     File logFile = SD.open("drive1.txt");
     //File logFile = SD.open("A10408.txt");
@@ -93,20 +95,79 @@ void loop()
       tEnd = millis();
       //delay(tDelay-(tEnd-tStart)); //causing glitches, works with or without... 
       //timing will change with code improvemnts 
-      if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||address == 0x381526C ||address == 0x1A0600A||address == 0x2006428){
+      if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||address == 3600008 ||address == 0x381526C || address == 0xA10408|| address == 0x1A0600A){
         CAN.sendMsgBuf(address, 1, 8, stmp);
       }
-      if(address == 3600008){
-        stmp[0] = 0x0;
-        stmp[1] = 0x0;
-        stmp[2] = 0xB0;
-        stmp[3] = 0x60;
-        stmp[4] = 0x30;
-        stmp[5] = 0x0;
-        stmp[6] = 0x0;
-        stmp[7] =  0x0;
+      if(address == 0x131726C){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x1E0162A){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x14034A2){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x2202262){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0xE01008){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0xC00402){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x1601422){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x2C1302A){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x12173BE){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x2300492){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x2510000){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x3000042){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x3200408){
+        //CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x2616CFC){
         CAN.sendMsgBuf(address, 1, 8, stmp);
       }
+      if(address == 0x3A04004){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x2006428){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x1017FFC){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x4000002){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x3E0004A){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x4200002){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x4900002){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x1B500000){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      if(address == 0x4600002){
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+      }
+      
     }
   }
 }
