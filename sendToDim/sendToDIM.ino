@@ -10,32 +10,34 @@
 #endif
 
 // the cs pin of the version after v1.1 is default to D9
-// v0.9b and v1.0 is default D10
-const int SPI_CS_PIN = 9;
+// v0.9b and v1.0 is default D10-
+//9 = Arduino UNO CAN Shield 
+//const int SPI_CS_PIN = 9;
+//3 = Arduino MKR CAN Shield
+const int SPI_CS_PIN = 3;
 const int SPI_CS_SD = 4;
 unsigned char flagRecv = 0;
 unsigned long lineCnt = 0;
-bool bRun = false;
 MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
 
 void setup()
 {
-  //SERIAL.begin(115200); //Enable and disable serial logging 
+  SERIAL.begin(115200); //Enable and disable serial logging 
   /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
   while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 125k
   {
-    //SERIAL.println("CAN BUS Shield init fail");
-    //SERIAL.println(" Init CAN BUS Shield again");
+    SERIAL.println("CAN BUS Shield init fail");
+    SERIAL.println(" Init CAN BUS Shield again");
   }
-  //SERIAL.println("CAN BUS Shield init ok!");
+  SERIAL.println("CAN BUS Shield init ok!");
   attachInterrupt(0, MCP2515_ISR, FALLING); // start interrupt
   if (!SD.begin(4))
   {
-    //Serial.println("SD initialization failed!");
+    Serial.println("SD initialization failed!");
     while (1)
       ;
   }
-  //Serial.println("SD initialization done.");
+  Serial.println("SD initialization done.");
   delay(200);
 }
 void MCP2515_ISR()
@@ -95,79 +97,14 @@ void loop()
       tEnd = millis();
       //delay(tDelay-(tEnd-tStart)); //causing glitches, works with or without... 
       //timing will change with code improvemnts 
-      if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||address == 3600008 ||address == 0x381526C || address == 0xA10408|| address == 0x1A0600A){
+      //if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||
+      //address == 3600008 ||address == 0x381526C || address == 0xA10408|| 
+      //address == 0x1A0600A ||address == 0x2616CFC ||address == 0x2006428){
         CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x131726C){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x1E0162A){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x14034A2){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x2202262){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0xE01008){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0xC00402){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x1601422){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x2C1302A){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x12173BE){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x2300492){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x2510000){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x3000042){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x3200408){
-        //CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x2616CFC){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x3A04004){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x2006428){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x1017FFC){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x4000002){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x3E0004A){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x4200002){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x4900002){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x1B500000){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      if(address == 0x4600002){
-        CAN.sendMsgBuf(address, 1, 8, stmp);
-      }
-      
+      //}
+      //if(address == 0x217FFC){
+        
+      //}
     }
   }
 }

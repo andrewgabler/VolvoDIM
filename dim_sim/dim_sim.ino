@@ -10,13 +10,13 @@
 #endif
 // the cs pin of the version after v1.1 is default to D9
 // v0.9b and v1.0 is default D10
-const int SPI_CS_PIN = 9;
-
+//9 = Arduino UNO CAN Shield 
+//const int SPI_CS_PIN = 9;
+//3 = Arduino MKR CAN Shield
+const int SPI_CS_PIN = 3;
 MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
 
 int cnt = 0;
-int fourCCnt = 0;
-int fourCtot = 0;
 unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long address;
 unsigned long addrLi[9] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA10408,0x2006428,0x1A0600A,0x2616CFC};
@@ -104,19 +104,19 @@ void initSRS(){
  * Couldn't detect a pattern from my logs on the meaning of the first byte.
  * First byte is decided semi-randomly and is selected based on occureance in the logs.
  */
-void genSRS(long address, char stmp[]){
+void genSRS(long address, byte stmp[]){
   int randomNum = random(0,794);
   if(randomNum >=0 && randomNum < 180){
-    stmp[0]= 0x40;
+    stmp[0]= (char) 0x40;
   }
   if(randomNum >=180 && randomNum < 370){
-    stmp[0]= 0xC0;
+    stmp[0]= (char) 0xC0;
   }
   if(randomNum >=370 && randomNum < 575){
-    stmp[0]= 0x0;
+    stmp[0]= (char) 0x0;
   }
   if(randomNum >=575 && randomNum < 794){
-    stmp[0]= 0x80;
+    stmp[0]= (char) 0x80;
   }
   CAN.sendMsgBuf(address, 1, 8, stmp);
   delay(20);
@@ -137,6 +137,7 @@ void genSRS(long address, char stmp[]){
     temp[0]=0x0B;
     CAN.sendMsgBuf(0x2616CFC, 1, 8, temp);
  }
+ 
 void setup()
 {
     SERIAL.begin(115200);
@@ -164,6 +165,7 @@ void loop()
       genSRS(address,stmp);
     }
     else {
+      SERIAL.println(address);
       CAN.sendMsgBuf(address, 1, 8, stmp);
       delay(20);  // send data per 20ms
     }
