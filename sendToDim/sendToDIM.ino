@@ -23,6 +23,8 @@ MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
 void setup()
 {
   SERIAL.begin(115200); //Enable and disable serial logging 
+  //while(!SerialUSB); //Serial monitor must be open for program to run.
+  //Prevents messages from being skipped because the arduino passes them before the serial connection is initialized.
   /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
   while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 125k
   {
@@ -97,13 +99,21 @@ void loop()
       tEnd = millis();
       //delay(tDelay-(tEnd-tStart)); //causing glitches, works with or without... 
       //timing will change with code improvemnts 
-      //if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||
-      //address == 3600008 ||address == 0x381526C || address == 0xA10408|| 
-      //address == 0x1A0600A ||address == 0x2616CFC ||address == 0x2006428){
+      if(address == 0x217FFC || address == 0x2803008 ||address == 0x3C01428 ||
+      address == 3600008 ||address == 0x381526C || address == 0xA10408|| 
+      address == 0x1A0600A ||address == 0x2616CFC ||address == 0x2006428 || address == 0x1017FFC){
         CAN.sendMsgBuf(address, 1, 8, stmp);
-      //}
-      //if(address == 0x217FFC){
-        
+        //Serial.println(address,HEX);
+      }
+      //if(address != 0x1017FFC){
+      //  CAN.sendMsgBuf(address, 1, 8, stmp);
+      //} else {
+      //  if((stmp[0] >=16 && stmp[0] <=31) || (stmp[0] == 0x01 && (stmp[7] == 0xF3 || stmp[7] == 0x0C))){
+       //   SERIAL.println(address,HEX);
+       //   stmp[4] = 0x00;
+      //    stmp[5]= 0x00;
+       //   CAN.sendMsgBuf(address, 1, 8, stmp);
+       // }
       //}
     }
   }

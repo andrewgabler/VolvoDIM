@@ -17,9 +17,12 @@ const int SPI_CS_PIN = 3;
 MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
 
 int cnt = 0;
+int listLen = 10;
+int carConCnt = 0;
+int configCnt = 0;
 unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long address;
-unsigned long addrLi[9] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA10408,0x2006428,0x1A0600A,0x2616CFC};
+unsigned long addrLi[10] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA10408,0x2006428,0x1A0600A,0x2616CFC,0x1017FFC};
 /*
  * addrLi[0] = Speed/KeepAlive
  * addrLi[1] = RPM/Backlights
@@ -30,10 +33,11 @@ unsigned long addrLi[9] = {0x217FFC,0x2803008,0x3C01428,0x381526C,0x3600008,0xA1
  * addrLi[6] = Anti-Skid
  * addrLi[7] = Aibag Light
  * addrLi[8] = 4C Error
+ * addrLi[9] = Car Config
  */
  
  //Refer to Excel Sheets for info about data values.
-unsigned char defaultData[9][8] = {
+unsigned char defaultData[10][8] = {
   {0x01,0x4B,0x00,0xD8,0xF0,0x58,0x00,0x00}, //Speed/KeepAlive , 0x217FFC
   {0xFF,0xE1,0xFF,0xF0,0xFF,0xCF,0x00,0x00}, //RPM/Backlights , 0x2803008
   {0x81,0x81,0x51,0x89,0x0D,0xDC,0x00,0x00}, //Coolant/OutdoorTemp , 0x3C01428 //broken right now
@@ -42,9 +46,30 @@ unsigned char defaultData[9][8] = {
   {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, //Blinker , 0xA10408
   {0x01,0xE3,0xE0,0x00,0x00,0x00,0x00,0x00}, //Anti-Skid , 0x2006428
   {0x00,0x00,0x00,0x00,0x00,0xBE,0x49,0x00}, //Aibag Light , 0x1A0600A
-  {0x0B,0x42,0x00,0x00,0xFD,0x1F,0x00,0xFF}  //4C keep alive / prevent error , 0x2616CFC
+  {0x0B,0x42,0x00,0x00,0xFD,0x1F,0x00,0xFF},  //4C keep alive / prevent error , 0x2616CFC
+  {0x01,0x0F,0xF7,0xFA,0x00,0x00,0x00,0xC0} //Car Config default
   };
 
+//Sets the data for what the car is equiped with. 
+//Taken from a 2007 M66 SR with Climate package, rear parking sensors, no nav.
+unsigned char carConfigData[16][8] = {
+    {0x10,0x10,0x01,0x03,0x02,0x01,0x00,0x01},
+    {0x11,0x18,0x05,0x05,0x02,0x03,0x01,0x05},
+    {0x12,0x03,0x02,0x02,0x01,0x02,0x05,0x01},
+    {0x13,0x01,0x01,0x01,0x02,0x02,0x01,0x04},
+    {0x14,0x04,0x01,0x02,0x01,0x02,0x03,0x11},
+    {0x15,0x15,0x03,0x02,0x02,0x01,0x01,0x01},
+    {0x16,0x02,0x62,0x02,0x01,0x02,0x01,0x02},
+    {0x17,0x01,0x02,0x02,0x01,0x03,0x03,0x01},
+    {0x18,0x01,0x05,0x03,0x03,0x12,0x04,0x04},
+    {0x19,0x11,0x02,0x10,0x01,0x05,0x01,0x02},
+    {0x1A,0x01,0x02,0x01,0x04,0x01,0x01,0x03},
+    {0x1B,0x01,0x02,0x10,0x01,0x01,0x01,0x01},
+    {0x1C,0x01,0x04,0x01,0x03,0x01,0x06,0x01},
+    {0x1D,0x04,0x02,0x01,0x01,0x01,0x01,0x01},
+    {0x1E,0x01,0x03,0x01,0x01,0x01,0x01,0x01},
+    {0x1F,0x01,0x02,0x05,0x02,0x02,0x22,0x01}
+    };
 /*
  * Time is 0-1440
  * every mumber is a minute
@@ -80,23 +105,23 @@ int clockToDecimal(int hour, int minute, int AM){
   } 
   return ((hour*60) + minute)+720;
 }
-
 /*
  * Initialization data from logs for SRS sytem
  */
 void initSRS(){
     unsigned char temp[8] = {0xC0,0x0,0x0,0x0,0x0,0xBC,0xDB,0x80};
-    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    unsigned long tempAddr = 0x1A0600A;
+    CAN.sendMsgBuf(tempAddr, 1, 8, temp);
     delay(20);
     temp[0]=0x0;
-    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    CAN.sendMsgBuf(tempAddr, 1, 8, temp);
     delay(20);
     temp[0]=0xC0;
     temp[6] = 0xC9;
-    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    CAN.sendMsgBuf(tempAddr, 1, 8, temp);
     delay(20);
     temp[0]=0x80;
-    CAN.sendMsgBuf(0x1A0600A, 1, 8, temp);
+    CAN.sendMsgBuf(tempAddr, 1, 8, temp);
 }
 
 /*
@@ -137,15 +162,30 @@ void genSRS(long address, byte stmp[]){
     temp[0]=0x0B;
     CAN.sendMsgBuf(0x2616CFC, 1, 8, temp);
  }
- 
+ /*
+  * Generate the car config. May be mileage from CEM, not sure.
+  * Sets last 2 bytes randomly based on random occurance in the logs.
+  */
+void genCC(long address, byte stmp[]){
+  int randomNum = random(0,7);
+  if(randomNum > 3){
+    stmp[6]= (char) 0xFF;
+    stmp[7]= (char) 0xF3;
+  }
+  CAN.sendMsgBuf(address, 1, 8, stmp);
+  delay(20);
+}
+
 void setup()
 {
     SERIAL.begin(115200);
+    //while(!SerialUSB); //Serial monitor must be open for program to run.
+    //Prevents messages from being skipped because the arduino passes them before the serial connection is initialized.
     randomSeed(analogRead(0));
     while (CAN_OK != CAN.begin(CAN_125KBPS))              // init can bus : baudrate = 500k
     {
         SERIAL.println("CAN BUS Shield init fail");
-        SERIAL.println(" Init CAN BUS Shield again");
+        SERIAL.println("Init CAN BUS Shield again");
         delay(100);
     }
     SERIAL.println("CAN BUS Shield init ok!");
@@ -163,14 +203,28 @@ void loop()
     }
     if(address == 0x1A0600A){
       genSRS(address,stmp);
-    }
-    else {
-      SERIAL.println(address);
+    } else if(address == 0x1017FFC ){
+      if(carConCnt % 12 == 1){
+        for(int i=0;i<8;i++){
+          stmp[i] = carConfigData[configCnt][i];
+        }
+        SERIAL.println(stmp[0],HEX);
+        configCnt++;
+      } else {
+        genCC(address,stmp);
+      }
+    } else {
+      //SERIAL.println(address);
       CAN.sendMsgBuf(address, 1, 8, stmp);
       delay(20);  // send data per 20ms
     }
     cnt++;
-    if(cnt==9){
+    if(cnt==listLen){
+      if(configCnt >= 16){
+        carConCnt = 0;
+      } else {
+        carConCnt++;
+      }
       cnt=0;
     }
 }
