@@ -254,7 +254,7 @@ double celsToFahr(double temp){
   * Set the digital outdoor temperature with fahrenheit input 
   * (Will always display on dim in fahrenheit)
   */
-void setTemp(int oTemp){
+void setOutdoorTemp(int oTemp){
   if(!(oTemp < -49 || oTemp > 176))
   {
     if(oTemp > -50 && oTemp <= 32){
@@ -278,7 +278,24 @@ void setTemp(int oTemp){
   }
   
 }
-
+/*
+ * Sets the coolant gauge from low to high
+ * Accepts value 0-100 low to high.
+ */
+void setCoolantGauge(int range){
+  if(range >= 0 && range <= 55 ){
+    defaultData[2][3] = range + 88;
+  }
+  else if(range > 55  && range <= 100 ){
+    //upper limit scales very slowly.
+    //This calculation makes it fit the 0-100 scale much better.
+    defaultData[2][3] = ceil((range-55)*.333) + 173;
+  }
+  else
+  {
+    //SERIAL.println("Value out of range");
+  }
+}
 void setup()
 {
   SERIAL.begin(115200);
@@ -293,7 +310,8 @@ void setup()
   }
   SERIAL.println("CAN BUS Shield init ok!");
   updateTime(clockToDecimal(random(0, 13), random(0, 60), 1));
-  setTemp(random(-49,177));
+  setOutdoorTemp(random(-49,177));
+  setCoolantGauge(50);
   initSRS();
   init4C();
 }
