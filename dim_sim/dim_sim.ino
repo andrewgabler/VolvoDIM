@@ -15,7 +15,7 @@
 //3 = Arduino MKR CAN Shield
 const int SPI_CS_PIN = 3;
 MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
-
+int rpmCnt = 502;
 int cnt = 0;
 int listLen = 10;
 int carConCnt = 0;
@@ -79,17 +79,23 @@ unsigned char carConfigData[16][8] = {
  */
 void updateTime(int inputTime)
 {
-  int b4;
-  for (int i = 0; i < 6; i++)
-  {
-    if (inputTime >= (i * 256) && inputTime < ((i + 1) * 256))
+  if(inputTime >=0 && inputTime <= 1440){
+    int b4;
+    for (int i = 0; i < 6; i++)
     {
-      b4 = i;
+      if (inputTime >= (i * 256) && inputTime < ((i + 1) * 256))
+      {
+        b4 = i;
+      }
     }
+    int b5 = inputTime - (b4 * 256);
+    defaultData[3][4] = b4;
+    defaultData[3][5] = b5;
   }
-  int b5 = inputTime - (b4 * 256);
-  defaultData[3][4] = b4;
-  defaultData[3][5] = b5;
+  else 
+  {
+    //SERIAL.println("Not a valid time");
+  }
 }
 
 /*
@@ -100,18 +106,25 @@ void updateTime(int inputTime)
  */
 int clockToDecimal(int hour, int minute, int AM)
 {
-  if (AM)
+  if((hour >=0 && hour <= 12) && (minute >=0 && minute < 60) && (AM == 1 || AM == 0)){
+    if (AM)
+    {
+      if (hour == 12)
+      {
+        return (minute);
+      }
+      else
+      {
+        return ((hour * 60) + minute);
+      }
+    }
+    return ((hour * 60) + minute) + 720;
+  } 
+  else 
   {
-    if (hour == 12)
-    {
-      return (minute);
-    }
-    else
-    {
-      return ((hour * 60) + minute);
-    }
+    //SERIAL.println("Not a valid time");
+    return 0;
   }
-  return ((hour * 60) + minute) + 720;
 }
 /*
  * Initialization data from logs for SRS sytem
@@ -296,6 +309,65 @@ void setCoolantGauge(int range){
     //SERIAL.println("Value out of range");
   }
 }
+/*
+ * Sets the speed in mph
+ */
+ void setCarSpeed(int carSpeed){
+  if(carSpeed >= 0 && carSpeed <= 160){
+    if(carSpeed >= 0 && carSpeed <= 40){
+      defaultData[0][5] = 0x58;
+      defaultData[0][6] = round(carSpeed * 6.375);
+    }
+    else if(carSpeed > 40 && carSpeed <= 80)
+    {
+      defaultData[0][5] = 0x59;
+      defaultData[0][6] = round(carSpeed * 6.375);
+    }
+    else if(carSpeed > 80 && carSpeed <= 120)
+    {
+      defaultData[0][5] = 0x5A;
+      defaultData[0][6] = round(carSpeed * 6.375);
+    }
+    else if(carSpeed > 120 && carSpeed <= 160)
+    {
+      defaultData[0][5] = 0x5B;
+      defaultData[0][6] = round(carSpeed * 6.375);
+    }
+  } 
+  else 
+  {
+    //SERIAL.println("Speed out of range");
+  }
+ }
+ /*
+  * Set gas gauge level 0-100
+  */
+ void setGasLevel(int level){
+  if(level >=0 && level <= 100){
+    defaultData[3][6] = round(level * .64 );
+    defaultData[3][7] = round(level * .64 );
+  } 
+  else 
+  {
+    //SERIAL.println("Gas level out of range");
+  }
+ }
+/*
+ * Set RPMs 502-8000
+ * Will not match gauge precicely, but close as can be.
+ * 501 and lower = 0x01 which is a no go.
+ * Very weird system for rpm it counts 0-255 by increments of 32 and rolls over 
+ */
+void setRpm(int rpm){
+  if(rpm > 501 && rpm <= 8000){
+    defaultData[1][6] = floor((rpm*.031875)/32) * 32  + floor((rpm*.031875)/8);
+  } 
+  else 
+  {
+    //SERIAL.println("RPM out of range");
+  }
+  
+}
 void setup()
 {
   SERIAL.begin(115200);
@@ -309,15 +381,19 @@ void setup()
     delay(100);
   }
   SERIAL.println("CAN BUS Shield init ok!");
+  initSRS();
+  init4C();
   updateTime(clockToDecimal(random(0, 13), random(0, 60), 1));
   setOutdoorTemp(random(-49,177));
   setCoolantGauge(50);
-  initSRS();
-  init4C();
+  setCarSpeed(5);
+  setGasLevel(50);
+  setRpm(502);
 }
-
-void loop()
-{
+/*
+ * Main message organization 
+ */
+void simDim(){
   address = addrLi[cnt];
   for (int i = 0; i < 8; i++)
   {
@@ -365,6 +441,11 @@ void loop()
     }
     cnt = 0;
   }
+}
+
+void loop()
+{
+  simDim();
 }
 
 // END FILE
