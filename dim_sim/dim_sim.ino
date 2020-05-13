@@ -15,7 +15,7 @@
 //3 = Arduino MKR CAN Shield
 const int SPI_CS_PIN = 3;
 MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
-int rpmCnt = 502;
+int genCnt = 0;
 int cnt = 0;
 int listLen = 10;
 int carConCnt = 0;
@@ -368,6 +368,43 @@ void setRpm(int rpm){
   }
   
 }
+/*
+ * Set Overhead led brightness 0-256
+ */
+ void setOverheadBrightness(int value){
+  if(value >= 0 && value <= 256){
+    defaultData[1][2] = value;
+  }
+  else 
+  {
+    //SERIAL.println("Value out of range");
+  }
+ }
+ /*
+ * Set LCD brightness 0-256
+ */
+ void setLcdBrightness(int value){
+  if(value >= 0 && value <= 256){
+    defaultData[1][4] = floor(value/32);
+  }
+  else 
+  {
+    //SERIAL.println("Value out of range");
+  }
+ }
+ /*
+ * Set brightness of all lights
+ */
+ void setTotalBrightness(int value){
+  if(value >= 0 && value <= 256){
+    setLcdBrightness(value);
+    setOverheadBrightness(value);
+  }
+  else 
+  {
+    //SERIAL.println("Value out of range");
+  }
+ }
 void setup()
 {
   SERIAL.begin(115200);
@@ -383,12 +420,13 @@ void setup()
   SERIAL.println("CAN BUS Shield init ok!");
   initSRS();
   init4C();
-  updateTime(clockToDecimal(random(0, 13), random(0, 60), 1));
+  updateTime(clockToDecimal(random(0, 13), random(0, 60), random(0,2)));
   setOutdoorTemp(random(-49,177));
-  setCoolantGauge(50);
-  setCarSpeed(5);
-  setGasLevel(50);
-  setRpm(502);
+  setCoolantGauge(random(0,100));
+  setCarSpeed(random(0,160));
+  setGasLevel(random(0,100));
+  setRpm(random(502,8000));
+  setTotalBrightness(random(0,257));
 }
 /*
  * Main message organization 
