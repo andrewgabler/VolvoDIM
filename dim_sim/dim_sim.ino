@@ -20,6 +20,8 @@ int cnt = 0;
 int listLen = 10;
 int carConCnt = 0;
 int configCnt = 0;
+int blinkerInterval = 0;
+bool leftBlinker = false, rightBlinker = false;
 unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long address;
 unsigned long addrLi[10] = {0x217FFC, 0x2803008, 0x3C01428, 0x381526C, 0x3600008, 0xA10408, 0x2006428, 0x1A0600A, 0x2616CFC, 0x1017FFC};
@@ -38,16 +40,16 @@ unsigned long addrLi[10] = {0x217FFC, 0x2803008, 0x3C01428, 0x381526C, 0x3600008
 
 //Refer to Excel Sheets for info about data values.
 unsigned char defaultData[10][8] = {
-    {0x01, 0x4B, 0x00, 0xD8, 0xF0, 0x58, 0x00, 0x00}, //Speed/KeepAlive , 0x217FFC
-    {0xFF, 0xE1, 0xFF, 0xF0, 0xFF, 0xCF, 0x00, 0x00}, //RPM/Backlights , 0x2803008
-    {0xC0, 0x80, 0x51, 0x89, 0x0D, 0xD4, 0x00, 0x00}, //Coolant/OutdoorTemp , 0x3C01428
-    {0x00, 0x01, 0x05, 0xBC, 0x05, 0xA0, 0x40, 0x40}, //Time/GasTank , 0x381526C
-    {0x00, 0x00, 0xB0, 0x60, 0x30, 0x00, 0x00, 0x00}, //Brake system Keep alive , 0x3600008
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, //Blinker , 0xA10408
-    {0x01, 0xE3, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00}, //Anti-Skid , 0x2006428
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0xBE, 0x49, 0x00}, //Aibag Light , 0x1A0600A
-    {0x0B, 0x42, 0x00, 0x00, 0xFD, 0x1F, 0x00, 0xFF}, //4C keep alive / prevent error , 0x2616CFC
-    {0x01, 0x0F, 0xF7, 0xFA, 0x00, 0x00, 0x00, 0xC0}  //Car Config default , 0x1017FFC
+  {0x01, 0x4B, 0x00, 0xD8, 0xF0, 0x58, 0x00, 0x00}, //0, Speed/KeepAlive , 0x217FFC
+  {0xFF, 0xE1, 0xFF, 0xF0, 0xFF, 0xCF, 0x00, 0x00}, //1, RPM/Backlights , 0x2803008
+  {0xC0, 0x80, 0x51, 0x89, 0x0D, 0xD4, 0x00, 0x00}, //2, Coolant/OutdoorTemp , 0x3C01428
+  {0x00, 0x01, 0x05, 0xBC, 0x05, 0xA0, 0x40, 0x40}, //3, Time/GasTank , 0x381526C
+  {0x00, 0x00, 0xB0, 0x60, 0x30, 0x00, 0x00, 0x00}, //4, Brake system Keep alive , 0x3600008
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, //5, Blinker , 0xA10408
+  {0x01, 0xE3, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00}, //6, Anti-Skid , 0x2006428
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0xBE, 0x49, 0x00}, //7, Aibag Light , 0x1A0600A
+  {0x0B, 0x42, 0x00, 0x00, 0xFD, 0x1F, 0x00, 0xFF}, //8, 4C keep alive / prevent error , 0x2616CFC
+  {0x01, 0x0F, 0xF7, 0xFA, 0x00, 0x00, 0x00, 0xC0}  //9, Car Config default , 0x1017FFC
 };
 
 //Sets the data for what the car is equiped with.
@@ -385,7 +387,7 @@ void setRpm(int rpm){
  */
  void setLcdBrightness(int value){
   if(value >= 0 && value <= 256){
-    defaultData[1][4] = floor(value/32);
+    defaultData[1][4] = round(value/32);
   }
   else 
   {
@@ -405,6 +407,68 @@ void setRpm(int rpm){
     //SERIAL.println("Value out of range");
   }
  }
+/*
+   Set left blinker to ON or OFF
+*/
+void setLeftBlinker(bool state) {
+  if (state) {
+    defaultData[5][7] = 0x0A;
+  } else {
+    defaultData[5][7] = 0x0;
+  }
+
+  leftBlinker = state;
+}
+/*
+   Set blink right to ON or OFF
+*/
+void setRightBlinker(bool state) {
+  if (state) {
+    defaultData[5][7] = 0x0C;
+  } else {
+    defaultData[5][7] = 0x0;
+  }
+  rightBlinker = state;
+}
+/*
+
+*/
+void genBlinking(long address, byte stmp[], bool isBlinking, int interval, int blinkSpeed) {
+  int blinkRatio = 7;
+  if (blinkSpeed == 0) {
+    blinkRatio = 5;
+  } else if (blinkSpeed == 2) {
+    blinkRatio = 15;
+  } else if (blinkSpeed == 3) {
+    blinkRatio = 50;
+  }
+  if (isBlinking && (interval % blinkRatio == 0)) {
+    int prevState = 0;
+    if(defaultData[5][7] == 0x0A || defaultData[5][7] == 0x0C){
+      prevState = 1;
+    }
+    //currently just leaves both on
+    if (leftBlinker) {
+      if (prevState == 1) {
+        defaultData[5][7] = 0x0E;
+      } else {
+        defaultData[5][7] = 0x10;
+      }
+      stmp[7] = defaultData[5][7];
+      CAN.sendMsgBuf(address, 1, 8, stmp);
+    }
+    //currently properly blinks the right blinker
+    if (rightBlinker) {
+      if (prevState == 1) {
+        defaultData[5][7] = 0x08;
+      } else {
+        defaultData[5][7] = 0x0C;
+      }
+      stmp[7] = defaultData[5][7];
+      CAN.sendMsgBuf(address, 1, 8, stmp);
+    }
+  }
+}
 void setup()
 {
   SERIAL.begin(115200);
@@ -420,13 +484,21 @@ void setup()
   SERIAL.println("CAN BUS Shield init ok!");
   initSRS();
   init4C();
-  updateTime(clockToDecimal(random(0, 13), random(0, 60), random(0,2)));
-  setOutdoorTemp(random(-49,177));
-  setCoolantGauge(random(0,100));
-  setCarSpeed(random(0,160));
-  setGasLevel(random(0,100));
-  setRpm(random(502,8000));
-  setTotalBrightness(random(0,257));
+  //updateTime(clockToDecimal(random(0, 13), random(0, 60), random(0,2)));
+  //(random(-49,177));
+  //setCoolantGauge(random(0,100));
+  //setCarSpeed(random(0,160));
+  //setGasLevel(random(0,100));
+  //setRpm(random(502,8000));
+  //setTotalBrightness(random(0,257));
+  updateTime(clockToDecimal(1, 30, 1));
+  setOutdoorTemp(72);
+  setCoolantGauge(82);
+  setCarSpeed(72);
+  setGasLevel(90);
+  setRpm(3400);
+  setTotalBrightness(256);
+  setLeftBlinker(true);
 }
 /*
  * Main message organization 
@@ -460,6 +532,9 @@ void simDim(){
       genCC(address, stmp);
     }
   }
+  else if (address == 0xA10408) {
+    genBlinking(address, stmp, true, blinkerInterval, 1);
+  }
   else
   {
     //SERIAL.println(address);
@@ -467,6 +542,7 @@ void simDim(){
     delay(20); // send data per 20ms
   }
   cnt++;
+  blinkerInterval++;
   if (cnt == listLen)
   {
     if (configCnt >= 16)
@@ -478,6 +554,9 @@ void simDim(){
       carConCnt++;
     }
     cnt = 0;
+  }
+  if (blinkerInterval >= 50) {
+    blinkerInterval = 0;
   }
 }
 

@@ -45,7 +45,8 @@ void loop()
     unsigned char buf[8];
     if (CAN_MSGAVAIL == CAN.checkReceive()) // check if data coming
     {
-        File logFile = SD.open("initLog.txt", FILE_WRITE);
+        //keep file name under 8 characters
+        File logFile = SD.open("joystic2.txt", FILE_WRITE);
         CAN.readMsgBuf(&len, buf); // read data,  len: data length, buf: data buf
         unsigned long canId = CAN.getCanId();
         //Serial.println(canId, HEX);
