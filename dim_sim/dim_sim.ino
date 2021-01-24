@@ -136,14 +136,14 @@ void initSRS()
   unsigned char temp[8] = {0xC0, 0x0, 0x0, 0x0, 0x0, 0xBC, 0xDB, 0x80};
   unsigned long tempAddr = 0x1A0600A;
   CAN.sendMsgBuf(tempAddr, 1, 8, temp);
-  delay(20);
+  delay(15);
   temp[0] = 0x0;
   CAN.sendMsgBuf(tempAddr, 1, 8, temp);
-  delay(20);
+  delay(15);
   temp[0] = 0xC0;
   temp[6] = 0xC9;
   CAN.sendMsgBuf(tempAddr, 1, 8, temp);
-  delay(20);
+  delay(15);
   temp[0] = 0x80;
   CAN.sendMsgBuf(tempAddr, 1, 8, temp);
 }
@@ -173,7 +173,7 @@ void genSRS(long address, byte stmp[])
     stmp[0] = (char)0x80;
   }
   CAN.sendMsgBuf(address, 1, 8, stmp);
-  delay(20);
+  delay(15);
 }
 
 /*
@@ -183,12 +183,12 @@ void init4C()
 {
   unsigned char temp[8] = {0x09, 042, 0x0, 0x0, 0x0, 0x50, 0x00, 0x00};
   CAN.sendMsgBuf(0x2616CFC, 1, 8, temp);
-  delay(20);
+  delay(15);
   CAN.sendMsgBuf(0x2616CFC, 1, 8, temp);
-  delay(20);
+  delay(15);
   temp[0] = 0x0B;
   CAN.sendMsgBuf(0x2616CFC, 1, 8, temp);
-  delay(20);
+  delay(15);
   temp[0] = 0x0B;
   CAN.sendMsgBuf(0x2616CFC, 1, 8, temp);
 }
@@ -205,7 +205,7 @@ void genCC(long address, byte stmp[])
     stmp[7] = (char)0xF3;
   }
   CAN.sendMsgBuf(address, 1, 8, stmp);
-  delay(20);
+  delay(15);
 }
 /*
    Generates random values for temp message
@@ -257,7 +257,7 @@ void genTemp(long address, byte stmp[]) {
     stmp[2] = (char)0x41;
   }
   CAN.sendMsgBuf(address, 1, 8, stmp);
-  delay(20);
+  delay(15);
 }
 /*
    Convert Celsius to Fahrenheit
@@ -452,6 +452,7 @@ void genBlinking(long address, byte stmp[], bool isBlinking, int interval, int b
       }
       stmp[7] = defaultData[5][7];
       CAN.sendMsgBuf(address, 1, 8, stmp);
+      delay(15);
     } else {
       if (defaultData[5][7] == 0x0A || defaultData[5][7] == 0x0C) {
         prevState = 1;
@@ -465,6 +466,7 @@ void genBlinking(long address, byte stmp[], bool isBlinking, int interval, int b
         }
         stmp[7] = defaultData[5][7];
         CAN.sendMsgBuf(address, 1, 8, stmp);
+        delay(15);
       }
       //blinks right blinker
       if (rightBlinker) {
@@ -475,6 +477,7 @@ void genBlinking(long address, byte stmp[], bool isBlinking, int interval, int b
         }
         stmp[7] = defaultData[5][7];
         CAN.sendMsgBuf(address, 1, 8, stmp);
+        delay(15);
       }
     }
   }
@@ -550,7 +553,7 @@ void simDim() {
   {
     //SERIAL.println(address);
     CAN.sendMsgBuf(address, 1, 8, stmp);
-    delay(20); // send data per 20ms
+    delay(15); // send data per 15ms
   }
   cnt++;
   blinkerInterval++;
