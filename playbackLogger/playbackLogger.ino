@@ -15,8 +15,8 @@ void setup()
 {
     Serial.begin(115200);
 START_INIT:
-    //if (CAN_OK == CAN.begin(CAN_500KBPS)) //OBD2 Pins 6 & 14
-    if (CAN_OK != CAN.begin(CAN_125KBPS)) //OBD2 Pins 3 & 11
+    //if (CAN_OK == CAN.begin(CAN_500KBPS)) //OBD2 Pins 6 & 14 - High Speed Network
+    if (CAN_OK != CAN.begin(CAN_125KBPS)) //OBD2 Pins 3 & 11 - Low Speed Network
     {
         Serial.println("CAN BUS Shield init fail");
         Serial.println("Init CAN BUS Shield again");
@@ -50,40 +50,6 @@ void loop()
         CAN.readMsgBuf(&len, buf); // read data,  len: data length, buf: data buf
         unsigned long canId = CAN.getCanId();
         //Serial.println(canId, HEX);
-        if(canId != 0x217FFC &&
-        canId != 0x131726C &&
-        canId != 0x1E0162A &&
-        canId != 0x14034A2 &&
-        canId != 0x2202262 &&
-        canId != 0xE01008 &&
-        canId != 0xC00402 &&
-        canId != 0x1601422 &&
-        canId != 0x1A0600A &&
-        canId != 0x2C1302A &&
-        canId != 0x12173BE &&
-        canId != 0x2803008 &&
-        canId != 0x2300492 &&
-        canId != 0x2510000 &&
-        canId != 0x3000042 &&
-        canId != 0x3200408 &&
-        canId != 0x2616CFC &&
-        canId != 0x3A04004 &&
-        canId != 0x3C01428 &&
-        canId != 0x381526C &&
-        canId != 0x2006428 &&
-        canId != 0x1017FFC &&
-        canId != 0x4000002 &&
-        canId != 0x3E0004A &&
-        canId != 0x3600008 &&
-        canId != 0x4200002 &&
-        canId != 0x4900002 &&
-        canId != 0xA10408 &&
-        canId != 0x1B500000 &&
-        canId != 0x4600002){
-          logFile.print("-");
-        } else {
-          logFile.print("***");
-        }
         Serial.println(canId, HEX);
         logFile.print(canId, HEX);
         logFile.print(",");
