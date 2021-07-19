@@ -15,6 +15,7 @@ void setup()
 {
     Serial.begin(115200);
 START_INIT:
+     /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
     //if (CAN_OK == CAN.begin(CAN_500KBPS)) //OBD2 Pins 6 & 14 - High Speed Network
     if (CAN_OK != CAN.begin(CAN_125KBPS)) //OBD2 Pins 3 & 11 - Low Speed Network
     {
