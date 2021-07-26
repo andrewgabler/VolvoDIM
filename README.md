@@ -3,6 +3,28 @@ Arduino project to power a volvo DIM outside of the car.
 Tested on a 2007 S60R DIM
 Tested on a 2005 S80 DIM
 
+#Tools needed 
+### Arduino Uno or MKR
+- Uno - https://www.amazon.com/gp/product/B008GRTSV6/
+- MKR - https://www.amazon.com/gp/product/B07FYFF5YZ/
+### Ardunio Can Shield
+- Uno CAN Shield - https://www.amazon.com/gp/product/B076DSQFXH/
+- MKR CAN Shield - https://www.amazon.com/gp/product/B07HNKCDCN/
+### Arduino SD card shield (optional - for logging and replaying)
+- UNO SD Card Shield - https://www.amazon.com/gp/product/B006LRR0IQ/
+- MKR SD CARD Shield - https://www.amazon.com/gp/product/B07HNKCDCN/
+- For MKR SD Shield 12v power as seen in youtube videos - https://www.amazon.com/gp/product/B074LK7G86/
+### Misc
+- SD Cards - https://www.amazon.com/gp/product/B08KSSX9PH/
+- Breadboard jumper wires - https://www.amazon.com/gp/product/B07GD2BWPY/
+
+#Libraries needed 
+- CAn BUS Seede Studio https://www.arduino.cc/reference/en/libraries/can-bus-shield/
+- SD
+- SPI
+- Math
+- Time
+
 # CANFileLogger
 Watch a video on this here - https://www.youtube.com/watch?v=7YRgJ1NKBkg
 
