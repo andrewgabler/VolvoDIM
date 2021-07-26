@@ -1,3 +1,4 @@
+#include <mcp_can_dfs.h>
 #include <mcp_can.h>
 #include <SPI.h>
 #include <math.h>

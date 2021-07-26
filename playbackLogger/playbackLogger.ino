@@ -13,22 +13,26 @@ MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200); //Make sure to change your serial monitor to this rate
+    while(!Serial); //Wait for serial to init for next messages.
+    Serial.println("Starting INIT");
 START_INIT:
      /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
+     /*2007 Volvo XC70 Low-Speed 125kbps High-Speed 500kbps */
     //if (CAN_OK == CAN.begin(CAN_500KBPS)) //OBD2 Pins 6 & 14 - High Speed Network
     if (CAN_OK != CAN.begin(CAN_125KBPS)) //OBD2 Pins 3 & 11 - Low Speed Network
     {
         Serial.println("CAN BUS Shield init fail");
         Serial.println("Init CAN BUS Shield again");
         goto START_INIT;
+    } else {
+      Serial.println("Can-Bus Success");
     }
     attachInterrupt(0, MCP2515_ISR, FALLING); // start interrupt
     if (!SD.begin(4))
     {
         Serial.println("SD initialization failed!");
-        while (1)
-            ;
+        goto START_INIT;
     }
     Serial.println("SD initialization done.");
     delay(200);
@@ -46,11 +50,10 @@ void loop()
     unsigned char buf[8];
     if (CAN_MSGAVAIL == CAN.checkReceive()) // check if data coming
     {
-        //keep file name under 8 characters
-        File logFile = SD.open("msgwind.txt", FILE_WRITE);
+        //keep file name under 8 characters or it wont create a file
+        File logFile = SD.open("srvrst.txt", FILE_WRITE);
         CAN.readMsgBuf(&len, buf); // read data,  len: data length, buf: data buf
         unsigned long canId = CAN.getCanId();
-        //Serial.println(canId, HEX);
         Serial.println(canId, HEX);
         logFile.print(canId, HEX);
         logFile.print(",");
@@ -68,5 +71,7 @@ void loop()
         lastTime = millis();
         logFile.println();
         logFile.close();
+    } else {
+      Serial.println("No CAN data being read");
     }
 }
