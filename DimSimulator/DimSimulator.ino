@@ -505,14 +505,14 @@ void setup()
   //setGasLevel(random(0,100));
   //setRpm(random(502,8000));
   //setTotalBrightness(random(0,257));
-  updateTime(clockToDecimal(1, 30, 1));
-  setOutdoorTemp(72);
-  setCoolantGauge(82);
-  setCarSpeed(72);
-  setGasLevel(90);
-  setRpm(3400);
+  updateTime(clockToDecimal(8, 45, 1));
+  setOutdoorTemp(68);
+  setCoolantGauge(33);
+  setCarSpeed(55);
+  setGasLevel(75);
+  setRpm(5500);
   setTotalBrightness(256);
-  //setLeftBlinker(true);
+  setLeftBlinker(true);
   setRightBlinker(true);
 }
 /*
