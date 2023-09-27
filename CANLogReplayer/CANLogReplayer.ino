@@ -1,4 +1,4 @@
-#include <mcp_can_dfs.h>
+#include "mcp2515_can.h"
 #include <mcp_can.h>
 #include <SPI.h>
 #include <SD.h>
@@ -20,14 +20,14 @@ const int SPI_CS_PIN = 3;
 const int SPI_CS_SD = 4;
 unsigned char flagRecv = 0;
 unsigned long lineCnt = 0;
-MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
+mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
 
 void setup()
 {
   SERIAL.begin(115200); //Enable and disable serial logging 
   while(!SerialUSB); //Prevents messages from being skipped because the arduino passes them before the serial connection is initialized.
   /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
-  while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 125k
+  while (CAN_OK != CAN.begin(CAN_125KBPS, MCP_16MHz)) // init can bus : baudrate = 125k
   {
     SERIAL.println("CAN BUS Shield init fail");
     SERIAL.println(" Init CAN BUS Shield again");

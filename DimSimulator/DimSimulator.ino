@@ -1,4 +1,5 @@
-#include <mcp_can_dfs.h>
+
+#include "mcp2515_can.h"
 #include <mcp_can.h>
 #include <SPI.h>
 #include <math.h>
@@ -14,15 +15,15 @@
 //9 = Arduino UNO CAN Shield
 //const int SPI_CS_PIN = 9;
 //3 = Arduino MKR CAN Shield
-const int SPI_CS_PIN = 3;
-MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
+const int SPI_CS_PIN = 9;
+mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
 int genCnt = 0;
 int cnt = 0;
 int listLen = 10;
 int carConCnt = 0;
 int configCnt = 0;
 int blinkerInterval = 0;
-bool leftBlinker = false, rightBlinker = false;
+bool leftBlinker = false, rightBlinker = false, solidState = false;
 unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long address;
 unsigned long addrLi[10] = {0x217FFC, 0x2803008, 0x3C01428, 0x381526C, 0x3600008, 0xA10408, 0x2006428, 0x1A0600A, 0x2616CFC, 0x1017FFC};
@@ -424,6 +425,21 @@ void setLeftBlinker(bool state) {
    Set blink right to ON or OFF
 */
 void setRightBlinker(bool state) {
+  solidState = state;
+  rightBlinker = state;
+}
+
+/*
+   Set left blinker to ON or OFF
+*/
+void setLeftBlinkerSolid(bool state) {
+  solidState = state;
+  leftBlinker = state;
+}
+/*
+   Set blink right to ON or OFF
+*/
+void setRightBlinkerSolid(bool state) {
   if (state) {
     defaultData[5][7] = 0x0C;
   } else {
@@ -443,7 +459,7 @@ void genBlinking(long address, byte stmp[], bool isBlinking, int interval, int b
   } else if (blinkSpeed == 3) {
     blinkRatio = 50;
   }
-  if (isBlinking && (interval % blinkRatio == 0)) {
+  if (isBlinking && (interval % blinkRatio == 0) && !solidState) {
     int prevState = 0;
     if (leftBlinker && rightBlinker) {
       if (defaultData[5][7] == 0x0E) {
@@ -481,15 +497,31 @@ void genBlinking(long address, byte stmp[], bool isBlinking, int interval, int b
         delay(15);
       }
     }
+  } else if(solidState){
+      if (leftBlinker) {
+        defaultData[5][7] = 0x0A;
+        stmp[7] = defaultData[5][7];
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+        delay(15);
+      }
+      if (rightBlinker) {
+        defaultData[5][7] = 0x0C;
+        stmp[7] = defaultData[5][7];
+        CAN.sendMsgBuf(address, 1, 8, stmp);
+        delay(15);
+      }
   }
 }
 void setup()
 {
+  //for relay use
+  pinMode(1,OUTPUT);
+  digitalWrite(1,HIGH);
   SERIAL.begin(115200);
   //while(!SerialUSB); //Serial monitor must be open for program to run.
   //Prevents messages from being skipped because the arduino passes them before the serial connection is initialized.
   randomSeed(analogRead(0));
-  while (CAN_OK != CAN.begin(CAN_125KBPS)) // init can bus : baudrate = 500k
+  while (CAN_OK != CAN.begin(CAN_125KBPS, MCP_16MHz)) // init can bus : baudrate = 500k
   {
     SERIAL.println("CAN BUS Shield init fail");
     SERIAL.println("Init CAN BUS Shield again");
@@ -512,8 +544,9 @@ void setup()
   setGasLevel(75);
   setRpm(5500);
   setTotalBrightness(256);
-  setLeftBlinker(true);
-  setRightBlinker(true);
+  //setLeftBlinker(true);
+  //setRightBlinker(true);
+  setLeftBlinkerSolid(true);
 }
 /*
    Main message organization

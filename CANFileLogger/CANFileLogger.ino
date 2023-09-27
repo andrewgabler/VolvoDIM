@@ -1,15 +1,20 @@
-#include <mcp_can_dfs.h>
+#include "mcp2515_can.h"
 #include <mcp_can.h>
 #include <SD.h>
 
-
+/*SAMD core*/
+#ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
+#define SERIAL SerialUSB
+#else
+#define SERIAL Serial
+#endif
 //9 = Arduino UNO CAN Shield 
 //const int SPI_CS_PIN = 9;
 //3 = Arduino MKR CAN Shield
 const int SPI_CS_PIN = 3;
 const int SPI_CS_SD = 4;
 unsigned char flagRecv = 0;
-MCP_CAN CAN(SPI_CS_PIN); // Set CS pin
+mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
 
 void setup()
 {
@@ -20,7 +25,7 @@ START_INIT:
      /* 2007 Volvo S60 R Low-Speed 125kbps High-Speed 500kbps */
      /*2007 Volvo XC70 Low-Speed 125kbps High-Speed 500kbps */
     //if (CAN_OK == CAN.begin(CAN_500KBPS)) //OBD2 Pins 6 & 14 - High Speed Network
-    if (CAN_OK != CAN.begin(CAN_125KBPS)) //OBD2 Pins 3 & 11 - Low Speed Network
+    if (CAN_OK != CAN.begin(CAN_125KBPS, MCP_16MHz)) //OBD2 Pins 3 & 11 - Low Speed Network
     {
         Serial.println("CAN BUS Shield init fail");
         Serial.println("Init CAN BUS Shield again");
